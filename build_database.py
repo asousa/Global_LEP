@@ -1,9 +1,9 @@
 import os
-import glob
+# import glob
 import re
 import numpy as np
 from coordinate_structure import coordinate_structure
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 from load_phi_files import load_phi_files
 from load_sim_constants import load_sim_constants
 import subprocess
@@ -51,7 +51,6 @@ def build_database(input_dir ='outputs', output_filename='database.pkl', t_new_s
 
     in_lats = np.array(sorted([int(i[3:]) for i in ins]))
     print "in lats:", in_lats
-
 
     # Should we downsample?
     if t_new_step is not None:
@@ -134,12 +133,11 @@ def build_database(input_dir ='outputs', output_filename='database.pkl', t_new_s
     database['out_lats']= coords.lat()
     database['consts']  = sc
 
-
     print "Saving database"
     with open(output_filename,'wb') as f:
-        pickle.dump(database,f,pickle.HIGHEST_PROTOCOL)
+        # pickle.dump(database,f,pickle.HIGHEST_PROTOCOL)
+        pickle.dump(database,f)
 
-
-if __name__ == "__main__":
-    build_database(input_dir_name="outputs/probably/",output_filename="database_dicts.pkl")
+# if __name__ == "__main__":
+#     build_database(input_dir_name="outputs/probably/",output_filename="database_dicts.pkl")
 

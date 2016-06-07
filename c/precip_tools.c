@@ -45,151 +45,145 @@
 static double scale_factor_single(double inp_lat, double inp_lon, double out_lat, double out_lon, double I0);
 
 
-
-// static PyObject *precip_single_flash(PyObject *self, PyObject *args) {
-//     PyArrayObject *in_array;           // The python objects to be extracted from the args
-//     // double *cin, *cout;             // The C vectors to be created to point to the
-//                                     //   python vectors, cin and cout point to the row
-//                                     //   of vecin and vecout, respectively
-//     PyObject *in_array;
-//     int in_len;
-//     int i;
+// // Totally working version (but it's slow!)  ----------
+// -------------------------------------------------------
+// static PyObject* example (PyObject *self, PyObject *args) {
+//     PyObject *arg1=NULL, *arg2=NULL, *arg3=NULL;
+//     PyArrayObject *arr1=NULL, *arr2=NULL, *oarr=NULL;
+//     int nd;
+//     int i,j;
+//     double inp_lat, inp_lon, I0;
+//     double * lat_ptr;
+//     double * lon_ptr;
+//     double * optr;
 //     double tmp;
-//     double * d;
-
-//   if (!PyArg_ParseTuple(args, "O!", &PyArray_Type, &vecin)){
-//     printf("shrug.");
-//   }
-
-//   /*  construct the output array, like the input array */
-//   vecout = PyArray_NewLikeArray(in_array, NPY_ANYORDER, NULL, 0);
-//   if (out_array == NULL)
+//     if (!PyArg_ParseTuple(args, "ddOOOd", &inp_lat, &inp_lon, &arg1, &arg2, &arg3, &I0)) {
 //       return NULL;
-//   /*  create the iterators */
-//   in_iter = NpyIter_New(in_array, NPY_ITER_READONLY, NPY_KEEPORDER,
-//                            NPY_NO_CASTING, NULL);
-
-
-//   in_len = vecin->dimensions[0];
-//   vecout = PyArray_NewLikeArray(vecin, NPY_ANYORDER, NULL, 0);
-
-//   printf("dims: %d\n",in_len);
-
-//   for (i=0; i<in_len; i++) {
-//     tmp = (double) vecin->data[i*sizeof(double)];
-//     printf("(%d : %f)\n",i, tmp);
-//     vecout->data[i] = 2.0*tmp;
-//   }
-
-  
-//   // for (i=0; i<in_len; i++) {
-//   //   printf("(%d : %f)\n",i, d[i]);
-//   // }
-
-
-
-//   return Py_BuildValue("d",in_len);
-
-// }
-
-
-
-
-// static PyObject *vectest(PyObject *self, PyObject *args) {
-//     PyArrayObject *in_array;
-//     // PyObject      *out_array;
-   
-//     int in_len;
-//     int i;
-//     double * d;
-
-
-//     /*  parse single numpy array argument */
-//     if (!PyArg_ParseTuple(args, "O!", &PyArray_Type, &in_array))
-//         return NULL;
-
-//     in_len = in_array->dimensions[0];
-
-//     printf("in length: %d\n",in_len);
-
-//     d = (double *)(in_array->data);
-
-//     for (i=0; i<in_len; i++) {
-//       printf("%d: %g\n",i, d[i]);
 //     }
-   
-//     /*  clean up and return the result */
-//     return Py_BuildValue("f",0,0);
 
+//     // In lats
+//     arr1 = (PyArrayObject*)PyArray_FROM_OTF(arg1, NPY_DOUBLE, NPY_IN_ARRAY);
+//     if (arr1 == NULL) return NULL;
+
+//     // In lons
+//     arr2 = (PyArrayObject*)PyArray_FROM_OTF(arg2, NPY_DOUBLE, NPY_IN_ARRAY);
+//     if (arr2 == NULL) return NULL;
+
+//     // output space
+//     oarr = (PyArrayObject*)PyArray_FROM_OTF(arg3, NPY_DOUBLE, NPY_INOUT_ARRAY);
+//     if (oarr == NULL) return NULL;
+
+//     /*vv* code that makes use of arguments *vv*/
+
+//     nd = PyArray_NDIM(arr1);   //number of dimensions
+//     npy_intp *lat_shape = PyArray_DIMS(arr1);  // npy_intp array of length nd showing length in each dim.
+//     npy_intp *lon_shape = PyArray_DIMS(arr2);  // npy_intp array of length nd showing length in each dim.
+    
+//     lat_ptr = (double *)PyArray_DATA(arr1);
+//     lon_ptr = (double *)PyArray_DATA(arr2);
+
+//     // for (i=0; i<nd; ++i) {
+//     //     printf("shape: %ld\n",lat_shape[i]);
+//     // }
+    
+//     for (i=0; i < lat_shape[0]; i++) {
+//       printf("%d: ",i);
+//       for (j=0; j < lon_shape[0]; j++) {
+
+
+//         // printf("(%g, %g)",lat_ptr[i], lon_ptr[j]);
+//         optr = (double *) PyArray_GETPTR2(oarr, i, j);
+
+//        // printf("sent: %g %g %g %g %g\n",inp_lat, inp_lon, lat_ptr[i], lon_ptr[j], I0);
+
+//         tmp = scale_factor_single(inp_lat, inp_lon, lat_ptr[i], lon_ptr[j], I0);
+//         *optr = tmp;
+//         // *optr = lon_ptr[j]*lat_ptr[i];
+//         // printf("%f ",tmp);
+
+//       }
+//       // printf("\n");
+//     }
+
+//     /*^^* code that makes use of arguments *^^*/
+
+//     // Tidy up
+//     Py_DECREF(arr1);
+//     Py_DECREF(arr2);
+//     Py_DECREF(oarr);
+//     Py_INCREF(Py_None);
+//     return Py_None;
 // }
+// -------------------------------------------------------------
 
-static PyObject* example (PyObject *self, PyObject *args) {
-    PyObject *arg1=NULL, *arg2=NULL, *arg3=NULL;
-    PyArrayObject *arr1=NULL, *arr2=NULL, *oarr=NULL;
-    int nd;
-    int i,j;
-    double inp_lat, inp_lon, I0;
-    double * lat_ptr;
-    double * lon_ptr;
-    double * optr;
-    double tmp;
-    if (!PyArg_ParseTuple(args, "ddOOOd", &inp_lat, &inp_lon, &arg1, &arg2, &arg3, &I0)) {
-      return NULL;
+
+/*  wrapped cosine function */
+static PyObject* cos_func_np(PyObject* self, PyObject* args)
+{
+
+    PyArrayObject *lat_in;
+    pyArrayObject *lon_in;
+    PyObject      *out_array;
+    NpyIter *in_iter;
+    NpyIter *out_iter;
+    NpyIter_IterNextFunc *in_iternext;
+    NpyIter_IterNextFunc *out_iternext;
+
+    /*  parse single numpy array argument */
+    if (!PyArg_ParseTuple(args, "OO",  &lat_in, &lon_in))
+        return NULL;
+
+    /*  construct the output array, like the input array */
+    out_array = PyArray_NewLikeArray(in_array, NPY_ANYORDER, NULL, 0);
+    if (out_array == NULL)
+        return NULL;
+
+    /*  create the iterators */
+    in_iter = NpyIter_New(in_array, NPY_ITER_READONLY, NPY_KEEPORDER,
+                             NPY_NO_CASTING, NULL);
+    if (in_iter == NULL)
+        goto fail;
+
+    out_iter = NpyIter_New((PyArrayObject *)out_array, NPY_ITER_READWRITE,
+                          NPY_KEEPORDER, NPY_NO_CASTING, NULL);
+    if (out_iter == NULL) {
+        NpyIter_Deallocate(in_iter);
+        goto fail;
     }
 
-    // In lats
-    arr1 = (PyArrayObject*)PyArray_FROM_OTF(arg1, NPY_DOUBLE, NPY_IN_ARRAY);
-    if (arr1 == NULL) return NULL;
-
-    // In lons
-    arr2 = (PyArrayObject*)PyArray_FROM_OTF(arg2, NPY_DOUBLE, NPY_IN_ARRAY);
-    if (arr2 == NULL) return NULL;
-
-    // output space
-    oarr = (PyArrayObject*)PyArray_FROM_OTF(arg3, NPY_DOUBLE, NPY_INOUT_ARRAY);
-    if (oarr == NULL) return NULL;
-
-    /*vv* code that makes use of arguments *vv*/
-
-    nd = PyArray_NDIM(arr1);   //number of dimensions
-    npy_intp *lat_shape = PyArray_DIMS(arr1);  // npy_intp array of length nd showing length in each dim.
-    npy_intp *lon_shape = PyArray_DIMS(arr2);  // npy_intp array of length nd showing length in each dim.
-    
-    lat_ptr = (double *)PyArray_DATA(arr1);
-    lon_ptr = (double *)PyArray_DATA(arr2);
-
-    // for (i=0; i<nd; ++i) {
-    //     printf("shape: %ld\n",lat_shape[i]);
-    // }
-    
-    for (i=0; i < lat_shape[0]; i++) {
-      printf("%d: ",i);
-      for (j=0; j < lon_shape[0]; j++) {
-
-
-        // printf("(%g, %g)",lat_ptr[i], lon_ptr[j]);
-        optr = (double *) PyArray_GETPTR2(oarr, i, j);
-
-       // printf("sent: %g %g %g %g %g\n",inp_lat, inp_lon, lat_ptr[i], lon_ptr[j], I0);
-
-        tmp = scale_factor_single(inp_lat, inp_lon, lat_ptr[i], lon_ptr[j], I0);
-        *optr = tmp;
-        // *optr = lon_ptr[j]*lat_ptr[i];
-        // printf("%f ",tmp);
-
-      }
-      // printf("\n");
+    in_iternext = NpyIter_GetIterNext(in_iter, NULL);
+    out_iternext = NpyIter_GetIterNext(out_iter, NULL);
+    if (in_iternext == NULL || out_iternext == NULL) {
+        NpyIter_Deallocate(in_iter);
+        NpyIter_Deallocate(out_iter);
+        goto fail;
     }
+    double ** in_dataptr  = (double **) NpyIter_GetDataPtrArray(in_iter);
+    double ** out_dataptr = (double **) NpyIter_GetDataPtrArray(out_iter);
 
-    /*^^* code that makes use of arguments *^^*/
+    /*  iterate over the arrays */
+    do {
+        **out_dataptr = cos(**in_dataptr);
+    } while(in_iternext(in_iter) && out_iternext(out_iter));
 
-    // Tidy up
-    Py_DECREF(arr1);
-    Py_DECREF(arr2);
-    Py_DECREF(oarr);
-    Py_INCREF(Py_None);
-    return Py_None;
+
+
+
+
+    /*  clean up and return the result */
+    NpyIter_Deallocate(in_iter);
+    NpyIter_Deallocate(out_iter);
+    Py_INCREF(out_array);
+    return out_array;
+
+    /*  in case bad things happen */
+    fail:
+        Py_XDECREF(out_array);
+        return NULL;
 }
+
+
+
 
 
 static PyObject *scale_factor(PyObject *self, PyObject *args) {

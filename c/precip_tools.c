@@ -45,84 +45,84 @@
 static double scale_factor_single(double inp_lat, double inp_lon, double out_lat, double out_lon, double I0);
 
 
-// // Totally working version (but it's slow!)  ----------
+// Totally working version (but it's slow!)  ----------
 // -------------------------------------------------------
-// static PyObject* example (PyObject *self, PyObject *args) {
-//     PyObject *arg1=NULL, *arg2=NULL, *arg3=NULL;
-//     PyArrayObject *arr1=NULL, *arr2=NULL, *oarr=NULL;
-//     int nd;
-//     int i,j;
-//     double inp_lat, inp_lon, I0;
-//     double * lat_ptr;
-//     double * lon_ptr;
-//     double * optr;
-//     double tmp;
-//     if (!PyArg_ParseTuple(args, "ddOOOd", &inp_lat, &inp_lon, &arg1, &arg2, &arg3, &I0)) {
-//       return NULL;
-//     }
+static PyObject* example (PyObject *self, PyObject *args) {
+    PyObject *arg1=NULL, *arg2=NULL, *arg3=NULL;
+    PyArrayObject *arr1=NULL, *arr2=NULL, *oarr=NULL;
+    int nd;
+    int i,j;
+    double inp_lat, inp_lon, I0;
+    double * lat_ptr;
+    double * lon_ptr;
+    double * optr;
+    double tmp;
+    if (!PyArg_ParseTuple(args, "ddOOOd", &inp_lat, &inp_lon, &arg1, &arg2, &arg3, &I0)) {
+      return NULL;
+    }
 
-//     // In lats
-//     arr1 = (PyArrayObject*)PyArray_FROM_OTF(arg1, NPY_DOUBLE, NPY_IN_ARRAY);
-//     if (arr1 == NULL) return NULL;
+    // In lats
+    arr1 = (PyArrayObject*)PyArray_FROM_OTF(arg1, NPY_DOUBLE, NPY_IN_ARRAY);
+    if (arr1 == NULL) return NULL;
 
-//     // In lons
-//     arr2 = (PyArrayObject*)PyArray_FROM_OTF(arg2, NPY_DOUBLE, NPY_IN_ARRAY);
-//     if (arr2 == NULL) return NULL;
+    // In lons
+    arr2 = (PyArrayObject*)PyArray_FROM_OTF(arg2, NPY_DOUBLE, NPY_IN_ARRAY);
+    if (arr2 == NULL) return NULL;
 
-//     // output space
-//     oarr = (PyArrayObject*)PyArray_FROM_OTF(arg3, NPY_DOUBLE, NPY_INOUT_ARRAY);
-//     if (oarr == NULL) return NULL;
+    // output space
+    oarr = (PyArrayObject*)PyArray_FROM_OTF(arg3, NPY_DOUBLE, NPY_INOUT_ARRAY);
+    if (oarr == NULL) return NULL;
 
-//     /*vv* code that makes use of arguments *vv*/
+    /*vv* code that makes use of arguments *vv*/
 
-//     nd = PyArray_NDIM(arr1);   //number of dimensions
-//     npy_intp *lat_shape = PyArray_DIMS(arr1);  // npy_intp array of length nd showing length in each dim.
-//     npy_intp *lon_shape = PyArray_DIMS(arr2);  // npy_intp array of length nd showing length in each dim.
+    nd = PyArray_NDIM(arr1);   //number of dimensions
+    npy_intp *lat_shape = PyArray_DIMS(arr1);  // npy_intp array of length nd showing length in each dim.
+    npy_intp *lon_shape = PyArray_DIMS(arr2);  // npy_intp array of length nd showing length in each dim.
     
-//     lat_ptr = (double *)PyArray_DATA(arr1);
-//     lon_ptr = (double *)PyArray_DATA(arr2);
+    lat_ptr = (double *)PyArray_DATA(arr1);
+    lon_ptr = (double *)PyArray_DATA(arr2);
 
-//     // for (i=0; i<nd; ++i) {
-//     //     printf("shape: %ld\n",lat_shape[i]);
-//     // }
+    // for (i=0; i<nd; ++i) {
+    //     printf("shape: %ld\n",lat_shape[i]);
+    // }
     
-//     for (i=0; i < lat_shape[0]; i++) {
-//       printf("%d: ",i);
-//       for (j=0; j < lon_shape[0]; j++) {
+    for (i=0; i < lat_shape[0]; i++) {
+      printf("%d: ",i);
+      for (j=0; j < lon_shape[0]; j++) {
 
 
-//         // printf("(%g, %g)",lat_ptr[i], lon_ptr[j]);
-//         optr = (double *) PyArray_GETPTR2(oarr, i, j);
+        // printf("(%g, %g)",lat_ptr[i], lon_ptr[j]);
+        optr = (double *) PyArray_GETPTR2(oarr, i, j);
 
-//        // printf("sent: %g %g %g %g %g\n",inp_lat, inp_lon, lat_ptr[i], lon_ptr[j], I0);
+       // printf("sent: %g %g %g %g %g\n",inp_lat, inp_lon, lat_ptr[i], lon_ptr[j], I0);
 
-//         tmp = scale_factor_single(inp_lat, inp_lon, lat_ptr[i], lon_ptr[j], I0);
-//         *optr = tmp;
-//         // *optr = lon_ptr[j]*lat_ptr[i];
-//         // printf("%f ",tmp);
+        tmp = scale_factor_single(inp_lat, inp_lon, lat_ptr[i], lon_ptr[j], I0);
+        *optr = tmp;
+        // *optr = lon_ptr[j]*lat_ptr[i];
+        // printf("%f ",tmp);
 
-//       }
-//       // printf("\n");
-//     }
+      }
+      // printf("\n");
+    }
 
-//     /*^^* code that makes use of arguments *^^*/
+    /*^^* code that makes use of arguments *^^*/
 
-//     // Tidy up
-//     Py_DECREF(arr1);
-//     Py_DECREF(arr2);
-//     Py_DECREF(oarr);
-//     Py_INCREF(Py_None);
-//     return Py_None;
-// }
+    // Tidy up
+    Py_DECREF(arr1);
+    Py_DECREF(arr2);
+    Py_DECREF(oarr);
+    Py_INCREF(Py_None);
+    return Py_None;
+}
 // -------------------------------------------------------------
 
 
 /*  wrapped cosine function */
-static PyObject* cos_func_np(PyObject* self, PyObject* args)
+static PyObject* itertest(PyObject* self, PyObject* args)
 {
 
     PyArrayObject *lat_in;
-    pyArrayObject *lon_in;
+    PyArrayObject *lon_in;
     PyObject      *out_array;
     NpyIter *in_iter;
     NpyIter *out_iter;
@@ -130,40 +130,47 @@ static PyObject* cos_func_np(PyObject* self, PyObject* args)
     NpyIter_IterNextFunc *out_iternext;
 
     /*  parse single numpy array argument */
-    if (!PyArg_ParseTuple(args, "OO",  &lat_in, &lon_in))
+    if (!PyArg_ParseTuple(args, "O!O!",  &PyArray_Type, &lat_in, &PyArray_Type, &lon_in))
         return NULL;
 
     /*  construct the output array, like the input array */
-    out_array = PyArray_NewLikeArray(in_array, NPY_ANYORDER, NULL, 0);
-    if (out_array == NULL)
-        return NULL;
+    // out_array = PyArray_NewLikeArray(lat_in, NPY_ANYORDER, NULL, 0);
+    // if (out_array == NULL)
+    //     return NULL;
+
+    npy_intp * out_dims=NULL;
+    out_dims[0] = lat_in->dimensions[0];
+    out_dims[1] = lon_in->dimensions[0];
+
+    out_array = PyArray_SimpleNew(2, out_dims, NPY_DOUBLE);
 
     /*  create the iterators */
-    in_iter = NpyIter_New(in_array, NPY_ITER_READONLY, NPY_KEEPORDER,
+    // in_iter = NpyIter_New(lat_in, NPY_ITER_READONLY, NPY_KEEPORDER,
+    //                          NPY_NO_CASTING, NULL);
+    // if (in_iter == NULL)
+    //     goto fail;
+
+    out_iter = NpyIter_MultiNew(out_array, 2, out_dims, NPY_ITER_READWRITE, NPY_KEEPORDER,
                              NPY_NO_CASTING, NULL);
-    if (in_iter == NULL)
-        goto fail;
+    // out_iter = NpyIter_New((PyArrayObject *)out_array, NPY_ITER_READWRITE,
+    //                       NPY_KEEPORDER, NPY_NO_CASTING, NULL);
+    // if (out_iter == NULL) {
+    //     NpyIter_Deallocate(in_iter);
+    //     goto fail;
+    // }
 
-    out_iter = NpyIter_New((PyArrayObject *)out_array, NPY_ITER_READWRITE,
-                          NPY_KEEPORDER, NPY_NO_CASTING, NULL);
-    if (out_iter == NULL) {
-        NpyIter_Deallocate(in_iter);
-        goto fail;
-    }
-
-    in_iternext = NpyIter_GetIterNext(in_iter, NULL);
+    // in_iternext = NpyIter_GetIterNext(in_iter, NULL);
     out_iternext = NpyIter_GetIterNext(out_iter, NULL);
     if (in_iternext == NULL || out_iternext == NULL) {
-        NpyIter_Deallocate(in_iter);
         NpyIter_Deallocate(out_iter);
         goto fail;
     }
-    double ** in_dataptr  = (double **) NpyIter_GetDataPtrArray(in_iter);
     double ** out_dataptr = (double **) NpyIter_GetDataPtrArray(out_iter);
 
     /*  iterate over the arrays */
     do {
-        **out_dataptr = cos(**in_dataptr);
+        printf("yo\n");
+        // **out_dataptr = cos(**in_dataptr);
     } while(in_iternext(in_iter) && out_iternext(out_iter));
 
 
@@ -313,6 +320,7 @@ static PyMethodDef module_funcs[] = {
     { "scale_factor", scale_factor, METH_VARARGS, NULL },
     // { "precip_single_flash", precip_single_flash, METH_VARARGS, NULL },
     { "example", example, METH_VARARGS, NULL },
+    { "itertest",itertest, METH_VARARGS, NULL },
     { NULL, NULL, 0, NULL }
 };
 

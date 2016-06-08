@@ -65,12 +65,12 @@ class precip_model(object):
             Returns: A numpy array of dimension [in_lats x out_lats x t]
         '''
 
-        # tx, ty, tz = np.meshgrid(in_lats, out_lats, t)
+        tx, ty, tz = np.meshgrid(in_lats, out_lats, t)
 
-        # keys =  np.array([np.abs(tx.ravel()),np.abs(ty.ravel()), tz.ravel()]).T
+        keys =  np.array([np.abs(tx.ravel()),np.abs(ty.ravel()), tz.ravel()]).T
         # print np.shape(tx), np.shape(ty), np.shape(tz)
 
-        keys = cartesian([in_lats, out_lats, t])
+        # keys = cartesian([in_lats, out_lats, t])
 
         
         # Model is symmetric around northern / southern hemispheres (mag. dipole coordinates):
@@ -78,10 +78,10 @@ class precip_model(object):
         #    in = N, out = S  --> Southern hemisphere
         #    in = S, out = N  --> Southern hemisphere
         #    in = S, out = S  --> Northern hemisphere
-        # use_southern_hemi = np.array(((tx > 0) ^ (ty > 0)).ravel())
-        # keys = np.abs(keys)
-        use_southern_hemi = np.array(((keys[:,0] > 0) ^ (keys[:,1] > 0)).ravel())
+        use_southern_hemi = np.array(((tx > 0) ^ (ty > 0)).ravel())
         keys = np.abs(keys)
+        # use_southern_hemi = np.array(((keys[:,0] > 0) ^ (keys[:,1] > 0)).ravel())
+        # keys = np.abs(keys)
 
         keys_N = keys[~use_southern_hemi,:]
         keys_S = keys[ use_southern_hemi,:]
@@ -95,8 +95,8 @@ class precip_model(object):
 
 
         # Indexes need to be swapped because of how meshgrid arranges things. Works tho!
-        return out_data.reshape(len(in_lats),len(out_lats),len(t))
-        # return out_data.reshape(len(out_lats),len(in_lats),len(t)).swapaxes(0,1)
+        # return out_data.reshape(len(in_lats),len(out_lats),len(t))
+        return out_data.reshape(len(out_lats),len(in_lats),len(t)).swapaxes(0,1)
 
 
 
@@ -172,7 +172,6 @@ class precip_model(object):
             inp_lon: Scalar longitude 
             out_lon: vector of longitudes to compute at
         '''
-
         dlong_sim = 0.7   # extra sidestep added to avoid null
         # ------------- More-realistic attempt, using same scaling factor as latitude.
         # Ratio of (2.1) --> equation (5.5) in Jacob's thesis
@@ -216,8 +215,8 @@ class precip_model(object):
         if I0:
             ratio = ratio * np.abs(I0/self.sc.I0)
 
-        return ratio, new_weight, old_weight
-
+        # return ratio, new_weight, old_weight
+        return ratio
 
         # # ----------- New version: Actually works, does wraparound properly -------
         # b = np.cos(self.D2R*inp_lat)*np.sin(self.D2R*(inp_lon - out_lon)/2.0)

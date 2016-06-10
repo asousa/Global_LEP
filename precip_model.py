@@ -5,7 +5,7 @@ import pickle
 from scipy import interpolate
 # from sklearn.svm import SVR
 # from sklearn.svm import NuSVR
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 from coordinate_structure import coordinate_structure
 import itertools
 import geopy.distance
@@ -13,17 +13,24 @@ import geopy.distance
 
 
 class precip_model(object):
-    def __init__(self,database="database.pkl", multiple_bands=False, cumsum = False):
+    def __init__(self,database="database.pkl", cumsum = False, mode='counts'):
 
-        self.R_earth = geopy.distance.EARTH_RADIUS
+        # self.R_earth = geopy.distance.EARTH_RADIUS*1e3
+
+        # Do we want energy (millergs/cm^2 sec), or particles (nElectrons/cm^2 sec)?
+        if mode=='energy':
+            N_title = 'N_energy'
+            S_title = 'S_energy'
+        elif mode =='counts':
+            N_title = 'N_el'
+            S_title = 'S_el'
+        
+
         self.D2R = np.pi/180.0
-        self.path_atten = -12 # db per 1000 km attenuation (approximation of decay for earth-ionsphere waveguide)
+        # self.path_atten = -12 # db per 1000 km attenuation (approximation of decay for earth-ionsphere waveguide)
 
         with open(database,'r') as file:
             self.db = pickle.load(file)
-
-        # in_lats = sorted(self.db.keys())
-        # self.multiple_bands = multiple_bands
 
         self.in_lats = self.db['in_lats']
         self.out_lats= self.db['out_lats']
@@ -34,11 +41,11 @@ class precip_model(object):
 
         if cumsum:
             print "Modeling cumulative sums"
-            N_el = np.cumsum(self.db['N_el'],axis=2)*self.sc.T_STEP
-            S_el = np.cumsum(self.db['S_el'],axis=2)*self.sc.T_STEP
+            N_el = np.cumsum(self.db[N_title],axis=2)*self.sc.T_STEP
+            S_el = np.cumsum(self.db[S_title],axis=2)*self.sc.T_STEP
         else:
-            N_el = self.db['N_el']
-            S_el = self.db['S_el']
+            N_el = self.db[N_title]
+            S_el = self.db[S_title]
 
 
         self.N_interp = interpolate.RegularGridInterpolator((self.in_lats, self.out_lats, self.t), N_el, fill_value=0, bounds_error=False)
@@ -185,6 +192,7 @@ class precip_model(object):
 
 
         # Compute previous (latitude-dependent) weighting:
+        # (i.e., scaled by distance along central longitude only)
         dist_lat_0  = (self.sc.R_E + self.sc.H_IONO/2.0)*dlat  
         dist_long_0 = (self.sc.R_E + self.sc.H_IONO/2.0)*dlong_sim*self.D2R
         dist_iono_0 = np.hypot(dist_lat_0, dist_long_0)
@@ -205,7 +213,7 @@ class precip_model(object):
         # # print np.shape(R_1)
 
         new_weight = np.sin(xi_1)/R_1
-        old_weight = np.sin(xi_0)#/R_0
+        old_weight = np.sin(xi_0)/R_0
 
         ratio = new_weight/(old_weight[:,np.newaxis])
 
@@ -216,7 +224,7 @@ class precip_model(object):
             ratio = ratio * np.abs(I0/self.sc.I0)
 
         # return ratio, new_weight, old_weight
-        return ratio
+        return ratio #, new_weight, old_weight
 
         # # ----------- New version: Actually works, does wraparound properly -------
         # b = np.cos(self.D2R*inp_lat)*np.sin(self.D2R*(inp_lon - out_lon)/2.0)

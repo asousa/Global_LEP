@@ -22,6 +22,12 @@ import fnmatch
 # ----------------------------------------------------------
 # A set of modules to quickly search and parse GLD entries
 # ----------------------------------------------------------
+#
+# Version 1.1:  Added logic to deal with overlapping files
+#               (asking for flashes spanning two files)
+#               6.8.2016 APS
+#
+# ----------------------------------------------------------
 class GLD_file_tools(object):
   def __init__(self,filepath, prefix='GLD'):
     self.GLD_root = filepath
@@ -104,13 +110,23 @@ class GLD_file_tools(object):
 
        returns: A list of tuples: <time ob
     '''
+    # print t
+    # print type(t)
+    
     filetime,filepath = self.get_file_at(t)
-    if filetime is None:
-      return None, None
-    else:
-      tprev = t - dt
-      #print t
-      #print tprev
+    
+    tprev = t - dt
+
+    rows =  []
+    times = []
+    if filetime is not None:
+      print "section 1"
+      # return None, None
+    # else:
+
+      # print "t:",t
+      # print "tprev:",tprev
+      # print "filetime:",filetime
       #buff_size = 100000 # bytes
       # Binary search thru entries:
       imax = np.floor(os.path.getsize(filepath)).astype('int')
@@ -119,28 +135,70 @@ class GLD_file_tools(object):
       thefile = open(filepath,'r')
       
       # Find closest index to target time:
+      # print "recursing t_ind"
       t_ind = self.recursive_search_kernel(thefile, t, imin, imax)
+      print t_ind
       #print self.datetime_from_row(self.parse_line(thefile,t_ind))
       
       # Find closest index to window time:
+      # print "recursing t_prev"
       tprev_ind = self.recursive_search_kernel(thefile,tprev,imin,imax)
+      print tprev_ind
       #print self.datetime_from_row(self.parse_line(thefile,tprev_ind))
+
+
+      # print "t_ind, tprev_ind (section 1)",t_ind, tprev_ind
+      if (t_ind is not None) and (tprev_ind is not None):
+        # return None, None
+        # Load rows between tprev_ind and t_ind:
+        while (thefile.tell() < t_ind):
+          curr_line = self.parse_line(thefile,thefile.tell())
+          rows.append(curr_line)
+          times.append(self.datetime_from_row(curr_line))
       
-      if (t_ind is None) or (tprev_ind is None):
-        return None, None
-      # Load rows between tprev_ind and t_ind:
-      rows = []
-      times = []
-      while (thefile.tell() < t_ind):
-        curr_line = self.parse_line(thefile,thefile.tell())
-        rows.append(curr_line)
-        times.append(self.datetime_from_row(curr_line))
-      logging.info(" Found " + str(len(rows)) + " entries between " + str(tprev) + " and " + str(t))
       
-      if len(rows) > 0:
-        return np.asarray(rows), np.asarray(times) 
-      else:
-        return None, None
+      # In the case that tprev runs over the start of the file (asking for flashes at 12:01...)
+      # This could be more-elegant but I'm just repeating the previous code
+    
+    if (filetime is None) or (tprev <= filetime):
+      # print "section 2"
+      filetime,filepath = self.get_file_at(tprev)
+
+
+      if filetime is not None:
+        # print "doing overlap"
+        imax = np.floor(os.path.getsize(filepath)).astype('int')
+        imin = 0
+
+        thefile = open(filepath,'r')
+        
+        t_ind = imax
+        # Find closest index to window time:
+        tprev_ind = self.recursive_search_kernel(thefile,tprev,imin,imax)
+        #print self.datetime_from_row(self.parse_line(thefile,tprev_ind))
+        
+        # print "t_ind, t_prev:",t_ind, tprev_ind
+
+        rows_prev = []
+        times_prev= []
+        # if (t_ind is None) or (tprev_ind is None):
+        #   return None, None
+        # Load rows between tprev_ind and t_ind:
+        if (t_ind is not None) and (tprev_ind is not None):
+          while (thefile.tell() < t_ind):
+            curr_line = self.parse_line(thefile,thefile.tell())
+            rows_prev.append(curr_line)
+            times_prev.append(self.datetime_from_row(curr_line))
+        
+        
+        rows[0:0] = rows_prev
+        times[0:0] = times_prev
+
+    logging.info(" Found " + str(len(rows)) + " entries between " + str(tprev) + " and " + str(t))
+    if len(rows) > 0:
+      return np.asarray(rows), np.asarray(times) 
+    else:
+      return None, None
        
   def recursive_search_kernel(self, thefile, target_time, imin, imax, n= 0 ):
     ''' Recursively searches thefile (previously open) for the closest entry
@@ -162,7 +220,7 @@ class GLD_file_tools(object):
       #print n, imin, imax, imid, imax-imin, curr_time
       return imin
     else:
-      if curr_time > target_time:
+      if curr_time >= target_time:
         #print 'too high: ',imin, imax, imid, imax-imin, curr_time
         imax = imid
         #imax -=1
@@ -171,7 +229,7 @@ class GLD_file_tools(object):
         imin = imid
         #imin += 1
       # Uncomment this to show recursion (hella sweet)  
-      #print imin, imax, imax-imin, curr_time
+      # print imin, imax, imax-imin, curr_time
       return self.recursive_search_kernel(thefile,target_time,imin,imax,n+1)
       
   def parse_line(self, thefile, theindex, n=0):

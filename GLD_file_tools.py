@@ -120,7 +120,7 @@ class GLD_file_tools(object):
     rows =  []
     times = []
     if filetime is not None:
-      print "section 1"
+      # print "section 1"
       # return None, None
     # else:
 
@@ -137,13 +137,13 @@ class GLD_file_tools(object):
       # Find closest index to target time:
       # print "recursing t_ind"
       t_ind = self.recursive_search_kernel(thefile, t, imin, imax)
-      print t_ind
+      # print t_ind
       #print self.datetime_from_row(self.parse_line(thefile,t_ind))
       
       # Find closest index to window time:
       # print "recursing t_prev"
       tprev_ind = self.recursive_search_kernel(thefile,tprev,imin,imax)
-      print tprev_ind
+      # print tprev_ind
       #print self.datetime_from_row(self.parse_line(thefile,tprev_ind))
 
 

@@ -4,7 +4,19 @@ from precip_model import precip_model
 import datetime as dt
 from coordinate_structure import transform_coords
 
-
+# ---------------------------------------------------------
+# calc_global_precip.py
+# ---------------------------------------------------------
+#
+# Calculate a heatmap of global precipitation:
+#   p:          precip_model object to use
+#   gld:        GLD_file_tools object to retrieve flash data
+#   in_time:    time to plot at (datetime object)
+#   window_time:time previous to look for flashes at (timedelta object)
+#   grid_lats:  Output latitudes (geomagnetic)
+#   grid_lons:  Output longitudes (geomagnetic)
+#
+#   V1.0 ~ 6.2016 APS
 
 def calc_global_precip(p, gld, in_time, window_time, grid_lats, grid_lons):
 
@@ -23,6 +35,7 @@ def calc_global_precip(p, gld, in_time, window_time, grid_lats, grid_lons):
     # print "Precalculating..."
     # p.precalculate_gridded_values(in_lat_grid, grid_lats, p.t)
 
+    print "starting at %s"%in_time
 
     lat_ind = 7
     lon_ind = 8
@@ -36,7 +49,8 @@ def calc_global_precip(p, gld, in_time, window_time, grid_lats, grid_lons):
 
     if flashes is not None:
         flashes = flashes[:,(lat_ind, lon_ind, mag_ind, mag_ind)]
-        flash_coords = transform_coords(flashes[:,0], flashes[:,1], np.zeros_like(flashes[:,0]), 'geographic', 'geomagnetic')
+        flash_coords = transform_coords(flashes[:,0], flashes[:,1], np.zeros_like(flashes[:,0]),
+                                        'geographic', 'geomagnetic')
         flashes[:,:2] = flash_coords[:,:2]
         flashes[:,3] = [(in_time - s).microseconds*1e-6 + (in_time - s).seconds for s in flash_times]
 
@@ -88,10 +102,12 @@ def calc_global_precip(p, gld, in_time, window_time, grid_lats, grid_lons):
 
             scalefactor = p.get_longitude_scaling(f[0], f[1], grid_lats, grid_lons, I0=f[2])
 
-            flux += scalefactor*lv[:,np.newaxis]    
+            flux += scalefactor*lv[:,np.newaxis]
     else:
         print "No flashes found at ", in_time
 
+
+    print "finished %s"%in_time
 
     return flux/window_time, flashes
 

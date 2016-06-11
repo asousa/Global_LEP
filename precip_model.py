@@ -8,7 +8,7 @@ from scipy import interpolate
 # from matplotlib import pyplot as plt
 from coordinate_structure import coordinate_structure
 import itertools
-import geopy.distance
+# import geopy.distance
 
 
 

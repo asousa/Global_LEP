@@ -19,9 +19,11 @@ class precip_model(object):
 
         # Do we want energy (millergs/cm^2 sec), or particles (nElectrons/cm^2 sec)?
         if mode=='energy':
+            print "Energy mode"
             N_title = 'N_energy'
             S_title = 'S_energy'
         elif mode =='counts':
+            print "Particle count mode"
             N_title = 'N_el'
             S_title = 'S_el'
         
@@ -41,13 +43,15 @@ class precip_model(object):
 
         if cumsum:
             print "Modeling cumulative sums"
+            # (integrating N dT --> total (counts/cm^2)
+            # Total counts/cm^2 between t2 and t1 is then N_el[t2] - N_el[t1]
             N_el = np.cumsum(self.db[N_title],axis=2)*self.sc.T_STEP
             S_el = np.cumsum(self.db[S_title],axis=2)*self.sc.T_STEP
         else:
             N_el = self.db[N_title]
             S_el = self.db[S_title]
 
-
+        # Interpolating objects:
         self.N_interp = interpolate.RegularGridInterpolator((self.in_lats, self.out_lats, self.t), N_el, fill_value=0, bounds_error=False)
         self.S_interp = interpolate.RegularGridInterpolator((self.in_lats, self.out_lats, self.t), S_el, fill_value=0, bounds_error=False)
 

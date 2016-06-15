@@ -45,6 +45,7 @@ def load_phi_files(dataDir, sc):
 
     #for ind, filename in enumerate(n_files):
     for L_ind, L in enumerate(L_vec):
+        # print "L: ",L
         
         # Binary files -- little-endian, 4-byte floats 
         dt = np.dtype('<f4')

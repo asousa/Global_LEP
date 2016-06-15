@@ -3,8 +3,8 @@
 #PBS -j oe
 #PBS -l nodes=64:ppn=1
 #PBS -o loggo.txt
-#PBS -N WIPP_scattering_50
-#PBS -q batch
+#PBS -N fluxmaps
+#PBS -q batchnew
 
 #  --mca btl_tcp_if_include p3p2 tells batchnew nodes which network interface to use
 #    batch is infiniband (ib0?), batchnew is just a private ethernet network
@@ -16,5 +16,5 @@ mpi=/usr/local/bin/mpirun # Which MPI to run
 pyt=/shared/users/asousa/software/python2/bin/python
 cmd=/shared/users/asousa/WIPP/global_precip/global_precip_MPI.py # Which file to run
 
-$mpi $pyt $cmd
+$mpi --mca btl_tcp_if_include p3p2 $pyt $cmd
 

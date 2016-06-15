@@ -27,6 +27,10 @@ import fnmatch
 #               (asking for flashes spanning two files)
 #               6.8.2016 APS
 #
+# Version 1.2:  Added try/catch blocks around datetime_from_row
+#               added line[0] == 0 condition for happy rows
+#               (Attempting to bulletproof reads on junky files)
+#               6.14.2016 APS                
 # ----------------------------------------------------------
 class GLD_file_tools(object):
   def __init__(self,filepath, prefix='GLD'):
@@ -153,8 +157,12 @@ class GLD_file_tools(object):
         # Load rows between tprev_ind and t_ind:
         while (thefile.tell() < t_ind):
           curr_line = self.parse_line(thefile,thefile.tell())
-          rows.append(curr_line)
-          times.append(self.datetime_from_row(curr_line))
+
+          newtime = self.datetime_from_row(curr_line)
+          # datetime_from_row will return None if line is unhappy
+          if newtime is not None:
+            rows.append(curr_line)
+            times.append(newtime)
       
       
       # In the case that tprev runs over the start of the file (asking for flashes at 12:01...)
@@ -187,8 +195,16 @@ class GLD_file_tools(object):
         if (t_ind is not None) and (tprev_ind is not None):
           while (thefile.tell() < t_ind):
             curr_line = self.parse_line(thefile,thefile.tell())
-            rows_prev.append(curr_line)
-            times_prev.append(self.datetime_from_row(curr_line))
+            newtime = self.datetime_from_row(curr_line)
+
+            # datetime_from_row will return None if line is unhappy
+
+            if newtime is not None:
+              rows_prev.append(curr_line)
+              times_prev.append(newtime)
+
+            # rows_prev.append(curr_line)
+            # times_prev.append(self.datetime_from_row(curr_line))
         
         
         rows[0:0] = rows_prev
@@ -209,14 +225,14 @@ class GLD_file_tools(object):
     l = self.parse_line(thefile,imid)
     if l is None:
       return None
-    #print l
+    # print l
     y,m,d,H,M,S = l[0:6].astype('int')
     curr_time = datetime.datetime(y,m,d,H,M,S)
     
     if n > 50:
       print 'max recursions!'
       return None
-    if abs(imin - imax) <= 100:
+    if abs(imin - imax) <= 200:
       #print n, imin, imax, imid, imax-imin, curr_time
       return imin
     else:
@@ -240,24 +256,36 @@ class GLD_file_tools(object):
     line = thefile.readline()
     vec = line.split('\t')
 
-    if n > 5:
+    # print "index:",theindex
+    if n > 50:
+      # print "failed to find an entry"
       logging.info("Failed to find an entry")
       return None
 
-    if len(vec)==25: 
-      return np.array(vec[1:11],'float')
+    if (len(vec)==25) and (vec[0] == '0'):
+      # print vec[0]
+      try:
+        return np.array(vec[1:11],'float')
+      except:
+        return self.parse_line(thefile=thefile,theindex=thefile.tell(), n=(n+1))
+
     else:
       # if (thefile.tell() == theindex):
       #   # At end of file -- jump back a few lines, use that value
+      # print "weird vector size:"
+      # print vec  
       #   logging.info("Hit end of file hit -- jumping backwards " + str(n) + ' ' + str(theindex))
       #   thefile.seek(theindex - (n+1)*200,0) # Healthy line is ~96 long  
       return self.parse_line(thefile=thefile,theindex=thefile.tell(), n=(n+1))
 
   def datetime_from_row(self, row):
+    # print row
     y,m,d,H,M,S,n = row[0:7].astype('int')
     micros = n/1000
-    return datetime.datetime(y,m,d,H,M,S,micros)
-
+    try:
+      return datetime.datetime(y,m,d,H,M,S,micros)
+    except:
+      return None
 
 
 

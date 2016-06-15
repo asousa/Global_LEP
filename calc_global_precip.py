@@ -3,7 +3,7 @@ from GLD_file_tools import GLD_file_tools
 from precip_model import precip_model
 import datetime as dt
 from coordinate_structure import transform_coords
-
+from mpl_toolkits.basemap.solar import daynight_grid
 # ---------------------------------------------------------
 # calc_global_precip.py
 # ---------------------------------------------------------
@@ -35,6 +35,13 @@ def calc_global_precip(p, gld, in_time, window_time, grid_lats, grid_lons):
     # print "Precalculating..."
     # p.precalculate_gridded_values(in_lat_grid, grid_lats, p.t)
 
+
+    # Get Day-night terminator map:
+    # daynite is a 2d masked array (true if day):
+    dn_lon_grid, dn_lat_grid, day_mask = daynight_grid(in_time, 1, -180, 180)
+
+    dn_lon = dn_lon_grid[0,:]
+    dn_lat = dn_lat_grid[:,0]
     print "starting at %s"%in_time
 
     lat_ind = 7
@@ -83,26 +90,37 @@ def calc_global_precip(p, gld, in_time, window_time, grid_lats, grid_lons):
             t_end   = np.min([p.t[-1], f[3]])   # Min to account for the interpolator returning 0 when outside of range
             t_start = np.max([0, t_end - window_time]) # np.max([0,f[3] - p.t[-1]])
 
+            #Get day/night value at flash:
+            dn_lat_ind = nearest_index(dn_lat, [f[0]])
+            dn_lon_ind = nearest_index(dn_lon, [f[1]])
+            is_day = day_mask.mask[dn_lat_ind, dn_lon_ind]
 
+            if not is_day:
 
-            # lv_1 = p.get_multiple_precip_at([f[0]], grid_lats, [t_end])
-            # lv_0 = p.get_multiple_precip_at([f[0]], grid_lats, [t_start])
-            
-            # From precalculated:
-            # print "F:", f
-            # print "PC in lats:", p.pc_in_lats
-            in_lat_ind = nearest_index(p.pc_in_lats, [f[0]])
-            t_end_ind  = nearest_index(p.pc_t, [f[3]])
-            t_start_ind = nearest_index(p.pc_t, [f[3] - window_time])
+              # lv_1 = p.get_multiple_precip_at([f[0]], grid_lats, [t_end])
+                # lv_0 = p.get_multiple_precip_at([f[0]], grid_lats, [t_start])
+                
+                # From precalculated:
+                # print "F:", f
+                # print "PC in lats:", p.pc_in_lats
+                in_lat_ind = nearest_index(p.pc_in_lats, [f[0]])
+                t_end_ind  = nearest_index(p.pc_t, [f[3]])
+                t_start_ind = nearest_index(p.pc_t, [f[3] - window_time])
 
-            lv = (p.precalculated[in_lat_ind, :, t_end_ind] - p.precalculated[in_lat_ind,:, t_start_ind]).squeeze()
-            
-            # # Freshly interpolated:
-            # lv = (p.get_multiple_precip_at([f[0]], grid_lats, [t_end]) - p.get_multiple_precip_at([f[0]], grid_lats, [t_start])).squeeze()
+                lv = (p.precalculated[in_lat_ind, :, t_end_ind] - p.precalculated[in_lat_ind,:, t_start_ind]).squeeze()
+                
+                # # Freshly interpolated:
+                # lv = (p.get_multiple_precip_at([f[0]], grid_lats, [t_end]) - p.get_multiple_precip_at([f[0]], grid_lats, [t_start])).squeeze()
 
-            scalefactor = p.get_longitude_scaling(f[0], f[1], grid_lats, grid_lons, I0=f[2])
+                scalefactor = p.get_longitude_scaling(f[0], f[1], grid_lats, grid_lons, I0=f[2])
 
-            flux += scalefactor*lv[:,np.newaxis]
+                # if is_day:
+                    # Assume ionosphere attenuates by 20 db extra
+                    # --> model outputs should scale like sqrt(20db) = 0.1
+                    # (I think. This is pretty handwavy)
+                    # flux += scalefactor*lv[:,np.newaxis]*0.1
+                # else:
+                flux += scalefactor*lv[:,np.newaxis]
     else:
         print "No flashes found at ", in_time
 

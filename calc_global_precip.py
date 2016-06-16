@@ -149,62 +149,6 @@ def calc_global_precip(p, gld, in_time, window_time, grid_lats, grid_lons):
     return flux/window_time, flashes
 
 
-# def daynight_scaling(in_lat, grid_lons, dnt_coords_geom, dec):
-#     '''Returns a vector same length as grid_lons.
-#        values are weighted according to the points at (in_lat, grid_lons) is day or night.
-#     '''
-#     # dnlons, dnlats, tau, dec = daynight_terminator(in_time, 0.1, grid_lons[0], grid_lons[-1])
-#     # # print dnlons, dnlats
-
-
-#     # dnt_coords_geom = transform_coords(dnlats, dnlons, np.zeros_like(dnlats),'geographic','geomagnetic')
-#     # dnt_coords_geom = dnt_coords_geom[dnt_coords_geom[:,0].argsort(),:]
-
-
-# #     # Find indices of termiator at input longitude:
-# #     center_lon_ind = np.searchsorted(dnt_coords_geom[:,1], in_lon, 'left')
-# #     center_lon_ind = min(center_lon_ind, len(dnt_coords_geom) - 1)
-# # # #     print center_lon_ind
-# # # #     print np.shape(dnt_coords_geom)
-# #     dnt_flash_lat = dnt_coords_geom[center_lon_ind,0]
-# # #     dnt_flash_lon = dnt_coords_geom[center_lon_ind,1]
-
-
-#     # Find indices of terminator at input latitude:
-#     inds = np.where((dnt_coords_geom[:,0] < in_lat + 3) & (dnt_coords_geom[:,0] > in_lat - 3))
-
-# #     print inds
-#     # Set up output:
-#     # center_lon_ind = np.searchsorted(grid_lons, in_lon, 'left')
-
-#     day_mask = np.zeros_like(grid_lons)
-#     if len(inds[0]) > 1:
-#         # Happy region:
-#         lonz = dnt_coords_geom[inds,1]
-#         lon_min = np.min(lonz)
-#         lon_max = np.max(lonz)
-
-#         day_mask[grid_lons <= lon_min] = 1
-#         day_mask[grid_lons >= lon_max] = 1
-
-#     else:
-#         day_mask = np.ones_like(grid_lons)
-
-
-#     # center_lon_ind = np.searchsorted(grid_lons, in_lon, 'left')
-#     # print dec
-#     # if dec > 0: # NH Summer
-#     #     # if in_lat > dnt_flash_lat:
-#     #     #     if day_mask[center_lon_ind] == 0:
-#     #             print "hi!"
-#     # else: # NH Winter
-#     # #     if day_mask[center_lon_ind] == 1:
-#     #         day_mask = 1 - day_mask
-
-#     return 1 - day_mask
-
-
-
 
 
 

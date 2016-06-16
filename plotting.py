@@ -13,8 +13,8 @@ def plot_flux_basemap(flux, in_lats, in_lons, flashes=None, plottime=None,
 
     lons, lats = np.meshgrid(in_lons, in_lats)
 
-    print np.shape(lons)
-    print np.shape(lats)
+    # print np.shape(lons)
+    # print np.shape(lats)
 
     new_coords = transform_coords(lats.ravel(), lons.ravel(),
                  100*np.ones_like(lons.ravel()),'geomagnetic','geographic')
@@ -22,8 +22,8 @@ def plot_flux_basemap(flux, in_lats, in_lons, flashes=None, plottime=None,
     mag_lons = new_coords[:,1].T.reshape(np.shape(lons))
     mag_lats = new_coords[:,0].T.reshape(np.shape(lats))
 
-    print np.shape(mag_lons)
-    print np.shape(mag_lats)
+    # print np.shape(mag_lons)
+    # print np.shape(mag_lats)
 
 
     fig = plt.figure()

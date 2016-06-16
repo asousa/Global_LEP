@@ -2,9 +2,9 @@
 #PBS -l walltime=72:00:00
 #PBS -j oe
 #PBS -l nodes=112:ppn=1
-#PBS -o loggo_2016.txt
+#PBS -o loggo_2015.txt
 #PBS -N fluxmaps
-#PBS -q batch
+#PBS -q batchnew
 
 #  --mca btl_tcp_if_include p3p2 tells batchnew nodes which network interface to use
 #    batch is infiniband (ib0?), batchnew is just a private ethernet network
@@ -14,8 +14,8 @@
 mpi=/usr/local/bin/mpirun # Which MPI to run
 #pyt=/shared/users/prblaes/software/python-2.7.3/bin/python # Which Python to use
 pyt=/shared/users/asousa/software/python2/bin/python
-cmd=/shared/users/asousa/WIPP/global_precip/global_precip_MPI_simple.py # Which file to run
+cmd=/shared/users/asousa/WIPP/global_precip/global_precip_MPI_simple_2.py # Which file to run
 
-# $mpi --mca btl_tcp_if_include p3p2 $pyt $cmd
-$mpi $pyt $cmd
+$mpi --mca btl_tcp_if_include p3p2 $pyt $cmd
+# $mpi $pyt $cmd
 

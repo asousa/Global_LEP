@@ -44,7 +44,7 @@ window_time = 60  # seconds
 task_spacing = datetime.timedelta(minutes=30) # Spacing between tasks
 save_spacing = datetime.timedelta(days=2)     # Interval between file saves
 
-out_dir = '/shared/users/asousa/WIPP/global_precip/outputs/2016'
+out_dir = '/shared/users/asousa/WIPP/global_precip/outputs/2015'
 
 fig_dir = os.path.join(out_dir, 'figures')
 
@@ -64,8 +64,8 @@ if rank==0:
     print "available nodes: ",comm.Get_size()
     print "Setting up parallel runs..."
     
-    sim_start = datetime.datetime(2016, 01, 1, 0, 0, 0)
-    sim_stop  = datetime.datetime(2016, 06, 1, 0, 0, 0)
+    sim_start = datetime.datetime(2015, 01, 1, 0, 0, 0)
+    sim_stop  = datetime.datetime(2016, 01, 1, 0, 0, 0)
 
     run_starttime = time.time()
     print "start time: %s"%run_starttime
@@ -98,9 +98,9 @@ if rank==0:
         tasklist_dict[day.strftime('%Y-%m-%d_%H-%M-%S')] = tasklist
 
 
-    for k in sorted(tasklist_dict.keys()):
-        print k
-        print len(tasklist_dict[k]), tasklist_dict[k][0], tasklist_dict[k][-1]
+    # for k in sorted(tasklist_dict.keys()):
+    #     print k
+    #     # print len(tasklist_dict[k]), tasklist_dict[k][0], tasklist_dict[k][-1]
 
     # tasklist = pd.date_range(start = sim_start, end = sim_stop, freq = '%ss'%task_spacing).tolist()
 
@@ -177,31 +177,35 @@ for day in tasklist_dict.keys():
             sendbuf.append([[in_time.isoformat()], flux])
 
             print "flux range:",np.min(flux),np.max(flux)
-            fig = plot_flux_basemap(flux, out_lat_grid, out_lon_grid, flashes,
-                                    plottime=in_time, logscale=True, clims=[-8,-2],
-                                    num_contours=20, mode='energy')
+            if len(flashes) > 0:
+                fig = plot_flux_basemap(flux, out_lat_grid, out_lon_grid, flashes,
+                                        plottime=in_time, logscale=True, clims=[-8,-2],
+                                        num_contours=20, mode='energy')
 
-            plt.savefig('%s/%s.png'%(fig_dir, in_time.strftime('%Y-%m-%d_%H-%M-%S')),bb_inches='tight')
-            # sendbuf.append([in_time.isoformat()])
+                plt.savefig('%s/%s.png'%(fig_dir, in_time.strftime('%Y-%m-%d_%H-%M-%S')),bb_inches='tight')
+                # sendbuf.append([in_time.isoformat()])
         except:
             print "Something went bad at %s"%in_time
 
     recvbuf = comm.gather(sendbuf, root=0)
 
     if rank==0:
-        print "recvbuf is: ", np.shape(recvbuf)
+        try:
+            print "recvbuf is: ", np.shape(recvbuf)
 
-        print "Concatenating results..."
-        
-        results = []
-        [results.extend(r) for r in recvbuf]
+            print "Concatenating results..."
+            
+            results = []
+            [results.extend(r) for r in recvbuf]
 
 
 
-        print "Saving results..."
-        with open(os.path.join(out_dir,'%s.pkl'%day),'wb') as file:
-            pickle.dump(results, file)
+            print "Saving results..."
+            with open(os.path.join(out_dir,'%s.pkl'%day),'wb') as file:
+                pickle.dump(results, file)
 
+        except:
+            print "Something went bad while saving at %s"%day
         run_stoptime = time.time()
 
         print "Total runtime: %d seconds"%(run_stoptime - run_starttime)

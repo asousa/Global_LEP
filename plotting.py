@@ -9,7 +9,7 @@ import datetime
 
 
 def plot_flux_basemap(flux, in_lats, in_lons, flashes=None, plottime=None,
-                      logscale=False, clims=[0,1], num_contours=10):
+                      logscale=False, clims=[0,1], num_contours=10, mode='counts'):
 
     lons, lats = np.meshgrid(in_lons, in_lats)
 
@@ -57,7 +57,18 @@ def plot_flux_basemap(flux, in_lats, in_lons, flashes=None, plottime=None,
 
     # Plot flux
     CS1 = plt.tricontourf(x.ravel(),y.ravel(),pd, contours,cmap=plt.cm.jet)
-    m.colorbar(CS1)
+    cbar = m.colorbar(CS1)
+
+    if logscale:
+        logstr = 'log${_10}$'
+    else:
+        logstr=''
+
+    if mode == 'energy':
+        cbar.set_label('Energy flux %s[mErg/cm$^2$ sec]'%logstr)
+    elif mode == 'counts':
+        cbar.set_label('Particle flux %s[el/cm$^2$ sec]'%logstr)
+
 
     if flashes is not None:
         new_flash_coords= transform_coords(flashes[:,0], flashes[:,1], 

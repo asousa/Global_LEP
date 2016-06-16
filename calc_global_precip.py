@@ -3,7 +3,9 @@ from GLD_file_tools import GLD_file_tools
 from precip_model import precip_model
 import datetime as dt
 from coordinate_structure import transform_coords
-from mpl_toolkits.basemap.solar import daynight_grid
+from daynite_scaler import daynite_scaler
+# from mpl_toolkits.basemap.solar import daynight_grid
+# from mpl_toolkits.basemap.solar import daynight_terminator
 # ---------------------------------------------------------
 # calc_global_precip.py
 # ---------------------------------------------------------
@@ -28,8 +30,8 @@ def calc_global_precip(p, gld, in_time, window_time, grid_lats, grid_lons):
     # (window time plus the full length of the model - this way we 
     #  account for all possible flux)
     lookback_time = dt.timedelta(seconds=p.t[-1] + window_time)
-
-    in_lat_grid  = np.arange(-70,70, step=0.1)
+    # lookback_time = dt.timedelta(seconds=window_time)
+    in_lat_grid  = np.arange(-60, 60, step=0.1)
 
 
     # print "Precalculating..."
@@ -37,11 +39,10 @@ def calc_global_precip(p, gld, in_time, window_time, grid_lats, grid_lons):
 
 
     # Get Day-night terminator map:
-    # daynite is a 2d masked array (true if day):
-    dn_lon_grid, dn_lat_grid, day_mask = daynight_grid(in_time, 1, -180, 180)
+    dn_s = daynite_scaler(in_time)
 
-    dn_lon = dn_lon_grid[0,:]
-    dn_lat = dn_lat_grid[:,0]
+    # dn_lon = dn_lon_grid[0,:]
+    # dn_lat = dn_lat_grid[:,0]
     print "starting at %s"%in_time
 
     lat_ind = 7
@@ -63,15 +64,17 @@ def calc_global_precip(p, gld, in_time, window_time, grid_lats, grid_lons):
 
 
         # Mask out flashes outside the range of the interpolator:
-        mask = (  (np.abs(flashes[:,0]) > 10) 
+        mask = (  (np.abs(flashes[:,0]) > 5) 
                 & (np.abs(flashes[:,0]) < 60)) 
                 # (flashes[:,2] > 50))
+
+
 
         # print "%g flashes (post-filter)" % np.sum(mask)
 
         # masked_flashes = flashes[mask, :]
         flashes = flashes[mask, :]
-
+        # print flashes
         # # in_lat_inds  = nearest_index(p.pc_in_lats,  masked_flashes[:,0])
         # t_end_inds   = nearest_index(p.pc_t,masked_flashes[:,3])
         # t_start_inds = nearest_index(p.pc_t, masked_flashes[:,3] - 1.0)
@@ -85,42 +88,58 @@ def calc_global_precip(p, gld, in_time, window_time, grid_lats, grid_lons):
         #     lv_single = lv[ind,:].squeeze()
         #     scalefactor*lv_single[:,np.newaxis]
 
+        # # Day / nite terminator:
+        # dnlons, dnlats, tau, dec = daynight_terminator(in_time, 0.1, grid_lons[0], grid_lons[-1])
+        # dnt_coords_geom = transform_coords(dnlats, dnlons, np.zeros_like(dnlats),'geographic','geomagnetic')
+        # dnt_coords_geom = dnt_coords_geom[dnt_coords_geom[:,0].argsort(),:]
 
         for ind, f in enumerate(flashes):
             t_end   = np.min([p.t[-1], f[3]])   # Min to account for the interpolator returning 0 when outside of range
             t_start = np.max([0, t_end - window_time]) # np.max([0,f[3] - p.t[-1]])
 
-            #Get day/night value at flash:
-            dn_lat_ind = nearest_index(dn_lat, [f[0]])
-            dn_lon_ind = nearest_index(dn_lon, [f[1]])
-            is_day = day_mask.mask[dn_lat_ind, dn_lon_ind]
+            # Mostly working block! ----------
+            # # Get day/night value at flash:
+            # # (day/night map is in Cartesian coordinates)
+            # f_cart = transform_coords(f[0],f[1],0,'geomagnetic','geographic')[0]
+            # dn_lat_ind = nearest_index(dn_lat, [f_cart[0]])
+            # dn_lon_ind = nearest_index(dn_lon, [f_cart[1]])
+            # # Longitudes (in Cartesian) for which flash was locally day:
+            # day_mask_lons_cart = dn_lon[~day_mask.mask[dn_lat_ind, :].squeeze()]
+            # day_mask_lons_geom = transform_coords(dn_lat[dn_lat_ind], day_mask_lons_cart, [0], 'geographic','geomagnetic')[:,1]
+            # day_mask_inds_geom = nearest_index(grid_lons, day_mask_lons_geom) 
+            
+            # # print day_mask_lons_cart
+            # # print day_mask_lons_geom
+            # # print day_mask_inds_geom
+            # day_mask_vector = np.zeros_like(grid_lons)
+            # day_mask_vector[day_mask_inds_geom] = 1
+            
 
-            if not is_day:
 
-              # lv_1 = p.get_multiple_precip_at([f[0]], grid_lats, [t_end])
-                # lv_0 = p.get_multiple_precip_at([f[0]], grid_lats, [t_start])
-                
-                # From precalculated:
-                # print "F:", f
-                # print "PC in lats:", p.pc_in_lats
-                in_lat_ind = nearest_index(p.pc_in_lats, [f[0]])
-                t_end_ind  = nearest_index(p.pc_t, [f[3]])
-                t_start_ind = nearest_index(p.pc_t, [f[3] - window_time])
+            # if not is_day:
 
-                lv = (p.precalculated[in_lat_ind, :, t_end_ind] - p.precalculated[in_lat_ind,:, t_start_ind]).squeeze()
-                
-                # # Freshly interpolated:
-                # lv = (p.get_multiple_precip_at([f[0]], grid_lats, [t_end]) - p.get_multiple_precip_at([f[0]], grid_lats, [t_start])).squeeze()
+            # lv_1 = p.get_multiple_precip_at([f[0]], grid_lats, [t_end])
+            # lv_0 = p.get_multiple_precip_at([f[0]], grid_lats, [t_start])
+            
+            # From precalculated:
+            # print "F:", f
+            # print "PC in lats:", p.pc_in_lats
+            in_lat_ind = nearest_index(p.pc_in_lats, [f[0]])
+            t_end_ind  = nearest_index(p.pc_t, [f[3]])
+            t_start_ind = nearest_index(p.pc_t, [f[3] - window_time])
 
-                scalefactor = p.get_longitude_scaling(f[0], f[1], grid_lats, grid_lons, I0=f[2])
+            lv = (p.precalculated[in_lat_ind, :, t_end_ind] - p.precalculated[in_lat_ind,:, t_start_ind]).squeeze()
+            
+            # # Freshly interpolated:
+            # lv = (p.get_multiple_precip_at([f[0]], grid_lats, [t_end]) - p.get_multiple_precip_at([f[0]], grid_lats, [t_start])).squeeze()
 
-                # if is_day:
-                    # Assume ionosphere attenuates by 20 db extra
-                    # --> model outputs should scale like sqrt(20db) = 0.1
-                    # (I think. This is pretty handwavy)
-                    # flux += scalefactor*lv[:,np.newaxis]*0.1
-                # else:
-                flux += scalefactor*lv[:,np.newaxis]
+            scalefactor = p.get_longitude_scaling(f[0], f[1], grid_lats, grid_lons, I0=f[2])
+
+            daynite_vector = dn_s.scaling_vector_at(f[0])
+
+           
+            flux += scalefactor*(np.outer(lv, daynite_vector))
+
     else:
         print "No flashes found at ", in_time
 
@@ -128,6 +147,66 @@ def calc_global_precip(p, gld, in_time, window_time, grid_lats, grid_lons):
     print "finished %s"%in_time
 
     return flux/window_time, flashes
+
+
+# def daynight_scaling(in_lat, grid_lons, dnt_coords_geom, dec):
+#     '''Returns a vector same length as grid_lons.
+#        values are weighted according to the points at (in_lat, grid_lons) is day or night.
+#     '''
+#     # dnlons, dnlats, tau, dec = daynight_terminator(in_time, 0.1, grid_lons[0], grid_lons[-1])
+#     # # print dnlons, dnlats
+
+
+#     # dnt_coords_geom = transform_coords(dnlats, dnlons, np.zeros_like(dnlats),'geographic','geomagnetic')
+#     # dnt_coords_geom = dnt_coords_geom[dnt_coords_geom[:,0].argsort(),:]
+
+
+# #     # Find indices of termiator at input longitude:
+# #     center_lon_ind = np.searchsorted(dnt_coords_geom[:,1], in_lon, 'left')
+# #     center_lon_ind = min(center_lon_ind, len(dnt_coords_geom) - 1)
+# # # #     print center_lon_ind
+# # # #     print np.shape(dnt_coords_geom)
+# #     dnt_flash_lat = dnt_coords_geom[center_lon_ind,0]
+# # #     dnt_flash_lon = dnt_coords_geom[center_lon_ind,1]
+
+
+#     # Find indices of terminator at input latitude:
+#     inds = np.where((dnt_coords_geom[:,0] < in_lat + 3) & (dnt_coords_geom[:,0] > in_lat - 3))
+
+# #     print inds
+#     # Set up output:
+#     # center_lon_ind = np.searchsorted(grid_lons, in_lon, 'left')
+
+#     day_mask = np.zeros_like(grid_lons)
+#     if len(inds[0]) > 1:
+#         # Happy region:
+#         lonz = dnt_coords_geom[inds,1]
+#         lon_min = np.min(lonz)
+#         lon_max = np.max(lonz)
+
+#         day_mask[grid_lons <= lon_min] = 1
+#         day_mask[grid_lons >= lon_max] = 1
+
+#     else:
+#         day_mask = np.ones_like(grid_lons)
+
+
+#     # center_lon_ind = np.searchsorted(grid_lons, in_lon, 'left')
+#     # print dec
+#     # if dec > 0: # NH Summer
+#     #     # if in_lat > dnt_flash_lat:
+#     #     #     if day_mask[center_lon_ind] == 0:
+#     #             print "hi!"
+#     # else: # NH Winter
+#     # #     if day_mask[center_lon_ind] == 1:
+#     #         day_mask = 1 - day_mask
+
+#     return 1 - day_mask
+
+
+
+
+
 
 def nearest_index(grid, values):
     # Find closest index of a value in an array (i.e., quick quantize to grid value)
